@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ovozli Tasbih PRO</title>
+
+<style>
+body{
+    margin:0;
+    background:black;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    flex-direction:column;
+}
+.counter{
+    font-size:70px;
+    margin:20px;
+}
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    font-size:18px;
+    margin:5px;
+    cursor:pointer;
+}
+.allow{ background:#2563eb; color:white; }
+.start{ background:#16a34a; color:white; }
+.status{ margin-top:15px; color:gray; text-align:center; }
+</style>
+</head>
+<body>
+
+<h1>📿 Ovozli Tasbih</h1>
+<div class="counter" id="count">0</div>
+
+<button class="allow" onclick="requestPermission()">🎤 Ruxsat So‘rash</button>
+<button class="start" onclick="startListening()">▶ Boshlash</button>
+
+<div class="status" id="status">Tayyor...</div>
+
+<script>
+let stream;
+let audioContext;
+let analyser;
+let dataArray;
+let count = 0;
+
+async function requestPermission(){
+    try{
+        stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        document.getElementById("status").innerText = "✅ Mikrofon ruxsati berildi!";
+    }catch(err){
+        document.getElementById("status").innerText = "❌ Ruxsat rad etildi!";
+    }
+}
+
+function startListening(){
+    if(!stream){
+        alert("Avval mikrofon ruxsatini bering!");
+        return;
+    }
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    let microphone = audioContext.createMediaStreamSource(stream);
+    microphone.connect(analyser);
+
+    analyser.fftSize = 256;
+    let bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    document.getElementById("status").innerText = "🎧 Eshitmoqda...";
+
+    listen();
+}
+
+function listen(){
+    analyser.getByteFrequencyData(dataArray);
+    let volume = dataArray.reduce((a,b)=>a+b)/dataArray.length;
+
+    if(volume > 65){
+        count++;
+        document.getElementById("count").innerText = count;
+    }
+
+    requestAnimationFrame(listen);
+}
+</script>
+
+</body>
+</html>
